@@ -1,9 +1,8 @@
-﻿using System;
-using Aptacode.Forms.Shared.Models;
+﻿using Aptacode.Forms.Shared.Interfaces;
+using Aptacode.Forms.Shared.Interfaces.Composite;
+using Aptacode.Forms.Shared.Interfaces.Controls;
 using Aptacode.Forms.Shared.ViewModels;
-using Aptacode.Forms.Shared.ViewModels.Layout;
-using Prism.Commands;
-using Prism.Mvvm;
+using BindableBase = Aptacode.CSharp.Common.Utilities.Mvvm.BindableBase;
 
 namespace Aptacode.Forms.Wpf.ViewModels.Designer
 {
@@ -11,60 +10,26 @@ namespace Aptacode.Forms.Wpf.ViewModels.Designer
     {
         public FormDesignerViewModel()
         {
-            FormGroupSelectorViewModel = new FormGroupSelectorViewModel();
-            FormRowSelectorViewModel = new FormRowSelectorViewModel();
-            FormElementSelectorViewModel = new FormElementSelectorViewModel();
+            ElementBrowserViewModel = new FormElementBrowserViewModel();
             FormElementEditorViewModel = new FormElementEditorViewModel();
+            CompositeElementEditorViewModel = new CompositeElementEditorViewModel();
 
-            FormGroupSelectorViewModel.OnGroupSelected += OnGroupSelected;
-            FormRowSelectorViewModel.OnRowSelected += OnRowSelected;
-            FormElementSelectorViewModel.OnColumnSelected += OnColumnSelected;
+            ElementBrowserViewModel.OnElementSelected += OnEditElement;
         }
 
-        #region Events
-
-        public EventHandler<FormViewModel> OnFormSelected { get; set; }
-        public EventHandler<FormViewModel> OnNewForm { get; set; }
-        public EventHandler<FormViewModel> OnOpenForm { get; set; }
-        public EventHandler<FormViewModel> OnSaveForm { get; set; }
-
-        #endregion
-
-        #region Methods
-
-        public void Load(FormModel form)
+        private void OnEditElement(object sender, IFormElementViewModel e)
         {
-            FormViewModel = new FormViewModel(form);
-            FormGroupSelectorViewModel.FormViewModel = FormViewModel;
+            switch (e) {
+                case IControlElementViewModel controlElementViewModel:
+                    FormElementEditorViewModel.FormElement = controlElementViewModel;
+                    ElementEditorViewModel = FormElementEditorViewModel;
+                    break;
+                case ICompositeElementViewModel compositeElementViewModel:
+                    CompositeElementEditorViewModel.SelectedElement = compositeElementViewModel;
+                    ElementEditorViewModel = CompositeElementEditorViewModel;
+                    break;
+            }
         }
-
-        public void Clear()
-        {
-            FormViewModel = null;
-            FormGroupSelectorViewModel.FormViewModel = FormViewModel;
-        }
-
-        #endregion
-
-        #region Event Handlers
-
-        private void OnGroupSelected(object sender, FormGroupViewModel e)
-        {
-            FormRowSelectorViewModel.FormGroup = e;
-        }
-
-        private void OnRowSelected(object sender, FormRowViewModel e)
-        {
-            FormElementSelectorViewModel.FormRow = e;
-        }
-
-        private void OnColumnSelected(object sender, FormColumnViewModel e)
-        {
-            FormElementEditorViewModel.FormColumn = e;
-        }
-
-        #endregion
-
 
         #region Properties
 
@@ -76,32 +41,23 @@ namespace Aptacode.Forms.Wpf.ViewModels.Designer
             set
             {
                 SetProperty(ref _formViewModel, value);
-                OnFormSelected?.Invoke(this, FormViewModel);
+
+                ElementBrowserViewModel.FormViewModel = FormViewModel;
+                FormElementEditorViewModel.FormViewModel = FormViewModel;
+                CompositeElementEditorViewModel.FormViewModel = FormViewModel;
+                EventListenerEditorViewModel = new EventListenerEditorViewModel
+                {
+                    FormViewModel = FormViewModel
+                };
             }
         }
 
-        private FormGroupSelectorViewModel _formGroupSelectorViewModel;
+        private FormElementBrowserViewModel _elementBrowserViewModel;
 
-        public FormGroupSelectorViewModel FormGroupSelectorViewModel
+        public FormElementBrowserViewModel ElementBrowserViewModel
         {
-            get => _formGroupSelectorViewModel;
-            set => SetProperty(ref _formGroupSelectorViewModel, value);
-        }
-
-        private FormRowSelectorViewModel _formRowSelectorViewModel;
-
-        public FormRowSelectorViewModel FormRowSelectorViewModel
-        {
-            get => _formRowSelectorViewModel;
-            set => SetProperty(ref _formRowSelectorViewModel, value);
-        }
-
-        private FormElementSelectorViewModel _formElementSelectorViewModel;
-
-        public FormElementSelectorViewModel FormElementSelectorViewModel
-        {
-            get => _formElementSelectorViewModel;
-            set => SetProperty(ref _formElementSelectorViewModel, value);
+            get => _elementBrowserViewModel;
+            set => SetProperty(ref _elementBrowserViewModel, value);
         }
 
         private FormElementEditorViewModel _formElementEditorViewModel;
@@ -112,24 +68,29 @@ namespace Aptacode.Forms.Wpf.ViewModels.Designer
             set => SetProperty(ref _formElementEditorViewModel, value);
         }
 
-        #endregion
+        private CompositeElementEditorViewModel _compositeElementEditorViewModel;
 
-        #region Commands
+        public CompositeElementEditorViewModel CompositeElementEditorViewModel
+        {
+            get => _compositeElementEditorViewModel;
+            set => SetProperty(ref _compositeElementEditorViewModel, value);
+        }
 
-        private DelegateCommand _newFormCommand;
+        private BindableBase _elementEditorViewModel;
 
-        public DelegateCommand NewFormCommand =>
-            _newFormCommand ??= new DelegateCommand(() => OnNewForm?.Invoke(this, FormViewModel));
+        public BindableBase ElementEditorViewModel
+        {
+            get => _elementEditorViewModel;
+            set => SetProperty(ref _elementEditorViewModel, value);
+        }
 
-        private DelegateCommand _openFormCommand;
+        private EventListenerEditorViewModel _eventListenerEditorViewModel;
 
-        public DelegateCommand OpenFormCommand =>
-            _openFormCommand ??= new DelegateCommand(() => OnOpenForm?.Invoke(this, FormViewModel));
-
-        private DelegateCommand _saveFormCommand;
-
-        public DelegateCommand SaveFormCommand =>
-            _saveFormCommand ??= new DelegateCommand(() => OnSaveForm?.Invoke(this, FormViewModel));
+        public EventListenerEditorViewModel EventListenerEditorViewModel
+        {
+            get => _eventListenerEditorViewModel;
+            set => SetProperty(ref _eventListenerEditorViewModel, value);
+        }
 
         #endregion
     }

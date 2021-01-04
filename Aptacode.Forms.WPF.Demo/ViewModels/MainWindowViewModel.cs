@@ -1,12 +1,14 @@
 ﻿using System.IO;
 using System.Windows;
+using Aptacode.CSharp.Common.Utilities.Mvvm;
+using Aptacode.Forms.Shared.EventListeners;
+using Aptacode.Forms.Shared.EventListeners.Events;
+using Aptacode.Forms.Shared.Json;
+using Aptacode.Forms.Shared.Models;
 using Aptacode.Forms.Shared.ViewModels;
-using Aptacode.Forms.Shared.ViewModels.Elements;
-using Aptacode.Forms.Shared.ViewModels.Events;
 using Aptacode.Forms.Wpf.ViewModels.Designer;
 using Microsoft.Win32;
 using Newtonsoft.Json;
-using Prism.Mvvm;
 
 namespace Aptacode.Forms.Wpf.FormDesigner.ViewModels
 {
@@ -15,71 +17,35 @@ namespace Aptacode.Forms.Wpf.FormDesigner.ViewModels
         public MainWindowViewModel()
         {
             FormDesignerViewModel = new FormDesignerViewModel();
-            FormDesignerViewModel.OnFormSelected += OnFormSelected;
-            FormDesignerViewModel.OnNewForm += OnNewForm;
-            FormDesignerViewModel.OnSaveForm += OnSaveForm;
-            FormDesignerViewModel.OnOpenForm += OnOpenForm;
+            FormViewModel = DemoForm.CreateForm();
         }
 
-        private void NameForm_OnFormEvent(object sender, FormEventArgs e)
+        private void FormViewModelOnOnTriggered(object sender, (EventListener, FormElementEvent) e)
         {
-            if (e is ButtonClickedEventArgs buttonClickedEvent && sender is ButtonElementViewModel button)
+            switch (e.Item1.Name)
             {
-                return;
+                case "submit":
+                    Submit();
+                    break;
+                case "tooLittleExperiance":
+                    MessageBox.Show("Sorry you've too little exp!");
+                    break;
             }
-
-            Submit();
         }
 
         private void Submit()
         {
             if (_formViewModel.IsValid)
             {
-                var formResults = _formViewModel.GetResult();
-                File.WriteAllText("./results.json", JsonConvert.SerializeObject(formResults, Formatting.Indented));
-
-                MessageBox.Show("Submitted");
+                File.WriteAllText("./results.json", JsonConvert.SerializeObject(
+                    _formViewModel.Results,
+                    SerializerSettings));
             }
             else
             {
-                MessageBox.Show(_formViewModel.GetValidationMessage());
+                MessageBox.Show(_formViewModel.ValidationMessage);
             }
         }
-
-        #region Event Handlers
-
-        private void OnFormSelected(object sender, FormViewModel e)
-        {
-            FormViewModel = e;
-            FormViewModel.OnFormEvent += NameForm_OnFormEvent;
-        }
-
-        private void OnNewForm(object sender, FormViewModel e)
-        {
-            FormDesignerViewModel.Load(FormIO.CreateForm().Model);
-        }
-
-        private void OnOpenForm(object sender, FormViewModel e)
-        {
-            var openFileDialog = new OpenFileDialog {Filter = "Json files (*.json)|*.json|All files (*.*)|*.*"};
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                var jsonString = File.ReadAllText(openFileDialog.FileName);
-                //    FormDesignerViewModel.Load(FormModel.FromJson(jsonString));
-            }
-            else
-            {
-                FormDesignerViewModel.Clear();
-            }
-        }
-
-        private void OnSaveForm(object sender, FormViewModel e)
-        {
-            //    File.WriteAllText($"{FormViewModel.Form.Name}.json", FormViewModel.Form.ToJson());
-        }
-
-        #endregion
 
         #region Properties
 
@@ -88,10 +54,61 @@ namespace Aptacode.Forms.Wpf.FormDesigner.ViewModels
         public FormViewModel FormViewModel
         {
             get => _formViewModel;
-            set => SetProperty(ref _formViewModel, value);
+            set
+            {
+                SetProperty(ref _formViewModel, value);
+                FormDesignerViewModel.FormViewModel = FormViewModel;
+                if (FormViewModel != null)
+                {
+                    FormViewModel.OnTriggered += FormViewModelOnOnTriggered;
+                }
+            }
         }
 
         public FormDesignerViewModel FormDesignerViewModel { get; set; }
+
+        public JsonSerializerSettings SerializerSettings { get; } =
+            new JsonSerializerSettings {Formatting = Formatting.Indented}
+                .AddElementConverter()
+                .AddEventSpecificationConverter()
+                .AddFormSpecificationConverter()
+                .AddValidatorConverter()
+                .AddEventConverter();
+
+        #endregion
+
+        #region Commands
+
+        private DelegateCommand _newCommand;
+
+        public DelegateCommand NewCommand =>
+            _newCommand = new DelegateCommand(_ => FormViewModel = DemoForm.CreateForm());
+
+        private DelegateCommand _loadCommand;
+
+        public DelegateCommand LoadCommand =>
+            _loadCommand = new DelegateCommand(_ =>
+            {
+                var openFileDialog = new OpenFileDialog {Filter = "Json files (*.json)|*.json|All files (*.*)|*.*"};
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    var jsonString = File.ReadAllText(openFileDialog.FileName);
+                    FormViewModel =
+                        new FormViewModel(JsonConvert.DeserializeObject<Form>(jsonString, SerializerSettings));
+                }
+                else
+                {
+                    FormViewModel = null;
+                }
+            });
+
+        public DelegateCommand SaveCommand =>
+            new DelegateCommand(_ =>
+            {
+                var jsonString = JsonConvert.SerializeObject(FormViewModel.Model, SerializerSettings);
+                File.WriteAllText($"{FormViewModel.Model.Name}.json", jsonString);
+            });
 
         #endregion
     }

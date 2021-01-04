@@ -1,31 +1,13 @@
-﻿@inherits FormElementBase
+﻿@using Aptacode.Forms.Shared.ViewModels.Elements.Controls
+@inherits FormElementBase
 
-<Field Horizontal="@IsFormHorizontal">
 
-    @if (!ViewModel.Label.IsHidden)
-    {
-        <FieldLabel>@ViewModel.Label.Text</FieldLabel>
-    }
-
-    <FieldBody>
-
-        @switch (ViewModel)
-        {
-            case ButtonElementViewModel buttonViewModel:
-                <ButtonElement ViewModel="@buttonViewModel"/>
-                break;
-            case TextFieldViewModel textEditViewModel:
-                <TextField ViewModel="@textEditViewModel"/>
-                break;
-            case ComboBoxFieldViewModel comboBoxFieldViewModel:
-                <ComboBoxField ViewModel="@comboBoxFieldViewModel"/>
-                break;
-            case CheckBoxFieldViewModel checkBoxFieldViewModel:
-                <CheckBoxField ViewModel="@checkBoxFieldViewModel"/>
-                break;
-            case HtmlElementViewModel htmlElementViewModel:
-                <HtmlElement ViewModel="@htmlElementViewModel"/>
-                break;
-        }
-    </FieldBody>
-</Field>
+@switch (ViewModel)
+{
+    case ICompositeElementViewModel compositeElement:
+        <CompositeElement ViewModel="@compositeElement"/>
+        break;
+    case IControlElementViewModel controlElement:
+        <ControlElement ViewModel="@controlElement"/>
+        break;
+}

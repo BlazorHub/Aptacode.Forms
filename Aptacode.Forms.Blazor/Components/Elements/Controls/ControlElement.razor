@@ -1,0 +1,34 @@
+﻿@using Aptacode.Forms.Shared.ViewModels.Elements.Controls
+@using Aptacode.Forms.Shared.Enums
+ 
+@inherits ControlElementBase
+
+<Field Horizontal="@IsFormHorizontal">
+
+    @if (ViewModel.Label.Position != LabelPosition.Hidden)
+    {
+        <FieldLabel>@ViewModel.Label.Text</FieldLabel>
+    }
+
+    <FieldBody>
+
+        @switch (ViewModel)
+        {
+            case ButtonElementViewModel buttonViewModel:
+                <ButtonElement ViewModel="@buttonViewModel"/>
+                break;
+            case TextElementViewModel textViewModel:
+                <TextElement ViewModel="@textViewModel"/>
+                break;
+            case SelectElementViewModel selectViewModel:
+                <SelectElementBase ViewModel="@selectViewModel"/>
+                break;
+            case CheckElementViewModel checkElementViewModel:
+                <CheckElement ViewModel="@checkElementViewModel"/>
+                break;
+            case HtmlElementViewModel htmlElementViewModel:
+                <HtmlElement ViewModel="@htmlElementViewModel"/>
+                break;
+        }
+    </FieldBody>
+</Field>
