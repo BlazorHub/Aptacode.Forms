@@ -3,7 +3,7 @@ using Aptacode.Forms.Shared.Interfaces.Controls;
 
 namespace Aptacode.Forms.Shared.ValidationRules
 {
-    public class TextElement_MinimunLength_Validator : TerminalBoolExpression<ITextElementViewModel>
+    public class TextElement_MinimunLength_Validator : NaryBoolExpression<ITextElementViewModel>
     {
         public TextElement_MinimunLength_Validator(int minimunLength)
         {
@@ -12,6 +12,9 @@ namespace Aptacode.Forms.Shared.ValidationRules
 
         public int MinimunLength { get; set; }
 
-        public override bool Interpret(ITextElementViewModel context) => context.Content.Length >= MinimunLength;
+        public override bool Interpret(ITextElementViewModel context)
+        {
+            return context.Content.Length >= MinimunLength;
+        }
     }
 }
